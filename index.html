@@ -6,26 +6,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     body { margin: 0; background: black; overflow: hidden; }
-    canvas { display: block; }
-    #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
-    #hi { position: absolute; top: 40px; left: 10px; color: darkblue; font-size: 18px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
-    #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                color: red; font-size: 30px; font-weight: bold; font-family: 'Press Start 2P', cursive; display: none; text-align: center; }
-    button { margin-top: 20px; padding: 10px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
-    #controls { position: absolute; bottom: 20px; width: 100%; text-align: center; }
-    #controls button { font-size: 20px; margin: 5px; padding: 10px 20px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
-    @media (max-width: 768px) {
-  #controls button {
-    font-size: 28px;   /* bigger text */
-    padding: 20px 40px; /* larger button area */
-  }
+canvas { display: block; }
+
+/* Score + HI */
+#score, #hi {
+  position: absolute;
+  left: 10px;
+  font-weight: bold;
+  font-family: 'Press Start 2P', cursive;
 }
+#score { top: 10px; color: white; font-size: 20px; }
+#hi { top: 40px; color: darkblue; font-size: 18px; }
+
+#gameOver {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: red; font-size: 30px; font-weight: bold;
+  font-family: 'Press Start 2P', cursive;
+  display: none; text-align: center;
+}
+button {
+  margin-top: 20px; padding: 10px;
+  font-weight: bold; font-family: 'Press Start 2P', cursive;
+}
+
+/* Controls always visible */
+#controls {
+  position: absolute; bottom: 20px; width: 100%; text-align: center;
+}
+#controls button {
+  font-size: 20px; margin: 5px; padding: 10px 20px;
+  font-weight: bold; font-family: 'Press Start 2P', cursive;
+}
+
+/* Mobile-specific adjustments */
 @media (max-width: 768px) {
+  #controls button {
+    font-size: 28px;       /* bigger text */
+    padding: 20px 40px;    /* larger tap area */
+  }
   canvas {
-    transform: scale(1.2);   /* zoom in */
+    transform: scale(1.2); /* zoom in game */
     transform-origin: center top;
   }
 }
+
 
     
   </style>
