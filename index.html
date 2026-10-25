@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jet Bomb Dodger</title>
+  <!-- Import Dino game font -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: black; overflow: hidden; }
+    canvas { display: block; }
+    #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
+    #hi { position: absolute; top: 40px; left: 10px; color: darkblue; font-size: 18px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
+    #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                color: red; font-size: 30px; font-weight: bold; font-family: 'Press Start 2P', cursive; display: none; text-align: center; }
+    button { margin-top: 20px; padding: 10px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
+    #controls { position: absolute; bottom: 20px; width: 100%; text-align: center; }
+    #controls button { font-size: 20px; margin: 5px; padding: 10px 20px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
+    @media (min-width: 768px) {
+      #controls { display: none; } /* hide buttons on PC */
+    }
+  </style>
+</head>
+<body>
+  <div id="score">SCORE: 0</div>
+  <div id="hi">HI: 0</div>
+  <div id="gameOver">
+    GAME OVER<br>
+    <button onclick="restartGame()">RETRY</button>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="controls">
+    <button onclick="moveLeft()">⬅️</button>
+    <button onclick="moveRight()">➡️</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Fullscreen canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    // Jet setup
+    let jet = { x: canvas.width/2 - 30, y: canvas.height - 120, width: 60, height: 90 };
+
+    // Bomb setup
+    let obstacles = [];
+
+    let score = 0;
+    let highscore = 0;
+    let gameRunning = true;
+
+    // Background scrolling
+    let bgY = 0;
+
+    function drawCloud(x, y) {
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(x, y, 20, 0, Math.PI * 2);
+      ctx.arc(x + 25, y + 10, 25, 0, Math.PI * 2);
+      ctx.arc(x - 25, y + 10, 25, 0, Math.PI * 2);
+      ctx.arc(x, y + 20, 30, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = "skyblue";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < 10; i++) {
+        let x = (i * 200) % canvas.width;
+        let y = (bgY + i * 150) % canvas.height;
+        drawCloud(x, y);
+      }
+      bgY += 2;
+      if (bgY > canvas.height) bgY = 0;
+    }
+
+    function drawJet() {
+      // Body
+      ctx.fillStyle = "gray";
+      ctx.fillRect(jet.x, jet.y, jet.width, jet.height);
+
+      // Nose cone
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.moveTo(jet.x, jet.y);
+      ctx.lineTo(jet.x + jet.width/2, jet.y - 40);
+      ctx.lineTo(jet.x + jet.width, jet.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cockpit dome
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.arc(jet.x + jet.width/2, jet.y + 20, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wings
+      ctx.fillStyle = "darkgray";
+      ctx.fillRect(jet.x - 25, jet.y + 40, 30, 12);
+      ctx.fillRect(jet.x + jet.width - 5, jet.y + 40, 30, 12);
+
+      // Tail fins
+      ctx.fillStyle = "darkgray";
+      ctx.fillRect(jet.x + jet.width/2 - 10, jet.y + jet.height - 15, 20, 20);
+    }
+
+    function drawObstacles() {
+      obstacles.forEach(o => {
+        // Bomb body
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, o.size/2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Handle (red semicircle)
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y - o.size/2, o.size/2, Math.PI, 0);
+        ctx.stroke();
+
+        // Text "BOMB" (normal font)
+        ctx.fillStyle = "red";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("BOMB", o.x, o.y + 4);
+      });
+    }
+
+    function updateObstacles() {
+      // Difficulty scaling
+      let speed = 4 + Math.floor(score / 200); // bombs fall faster with score
+      let spawnChance = 0.03 + score / 5000;   // spawn more bombs as score rises
+
+      obstacles.forEach(o => o.y += speed);
+      obstacles = obstacles.filter(o => o.y < canvas.height);
+      if (Math.random() < spawnChance) {
+        obstacles.push({ x: Math.random() * (canvas.width - 40), y: -40, size: 40 });
+      }
+    }
+
+    function checkCollision() {
+      for (let o of obstacles) {
+        // Proper circle collision detection
+        let dx = (jet.x + jet.width/2) - o.x;
+        let dy = (jet.y + jet.height/2) - o.y;
+        let distance = Math.sqrt(dx*dx + dy*dy);
+
+        if (distance < (o.size/2 + Math.min(jet.width, jet.height)/3)) {
+          gameRunning = false;
+          document.getElementById("gameOver").style.display = "block";
+          if (score > highscore) {
+            highscore = score;
+            document.getElementById("hi").innerText = "HI: " + highscore;
+          }
+        }
+      }
+    }
+
+    function updateScore() {
+      score++;
+      document.getElementById("score").innerText = "SCORE: " + score;
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      drawBackground();
+      drawJet();
+      updateObstacles();
+      drawObstacles();
+      checkCollision();
+      updateScore();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // PC controls
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" && jet.x > 0) jet.x -= 20;
+      if (e.key === "ArrowRight" && jet.x < canvas.width - jet.width) jet.x += 20;
+    });
+
+    // Mobile controls
+    function moveLeft() { if (jet.x > 0) jet.x -= 30; }
+    function moveRight() { if (jet.x < canvas.width - jet.width) jet.x += 30; }
+
+    function restartGame() {
+      obstacles = [];
+      score = 0;
+      jet.x = canvas.width/2 - 30;
+      jet.y = canvas.height - 120;
+      gameRunning = true;
+      document.getElementById("gameOver").style.display = "none";
+      document.getElementById("score").innerText = "SCORE: 0";
+      document.getElementById("hi").innerText = "HI: " + highscore;
+      gameLoop();
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
