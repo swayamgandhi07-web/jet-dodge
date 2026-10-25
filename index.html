@@ -14,7 +14,19 @@
     button { margin-top: 20px; padding: 10px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
     #controls { position: absolute; bottom: 20px; width: 100%; text-align: center; }
     #controls button { font-size: 20px; margin: 5px; padding: 10px 20px; font-weight: bold; font-family: 'Press Start 2P', cursive; }
-    
+    @media (max-width: 768px) {
+  #controls button {
+    font-size: 28px;   /* bigger text */
+    padding: 20px 40px; /* larger button area */
+  }
+}
+@media (max-width: 768px) {
+  canvas {
+    transform: scale(1.2);   /* zoom in */
+    transform-origin: center top;
+  }
+}
+
     
   </style>
 </head>
